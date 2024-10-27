@@ -1,0 +1,7 @@
+{
+    "entities": { "id": "entities", "directory": "assets/config", "source": "entities.json" },
+    "traits": { "id": "traits", "directory": "assets/config", "source": "traits.json" },
+    "settings": { "id": "settings", "directory": "assets/config", "source": "settings.json" },
+    "config": { "id": "config", "directory": "assets/config", "source": "config.json" },
+    "maps": { "id": "maps", "directory": "assets/maps", "source": "maps.json" }
+}
