@@ -53,10 +53,12 @@ ActionQueue.prototype.processRequest = function(messengerID, request, gameContex
 
     if(!isValid) {
         this.events.emit(ActionQueue.EVENT_ACTION_INVALID, request, messengerID);
+
         return false;
     }
 
     this.events.emit(ActionQueue.EVENT_ACTION_VALID, request, messengerID);
+    
     return true;
 }
 
@@ -78,6 +80,7 @@ ActionQueue.prototype.update = function(gameContext) {
 
         actionType.onStart(gameContext, request);
         actionType.onEnd(gameContext, request);
+        actionType.onClear();
     }
 
     this.state = ActionQueue.IDLE;

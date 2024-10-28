@@ -5,7 +5,7 @@ import { response } from "./source/response.js";
 import { NETWORK_EVENTS } from "./source/networkEvents.js";
 import { ROOM_EVENTS } from "./source/networkEvents.js";
 import { ROOM_TYPES } from "./enums.js";
-import { VersusRoom } from "./rooms/versusRoom.js";
+import { VersusRoom } from "./rooms/versus/versusRoom.js";
 
 export const ServerContext = function(io) {
     this.io = io;

@@ -2,6 +2,14 @@ export const Action = function() {}
 
 /**
  * 
+ * @returns {void} 
+ */
+Action.prototype.onClear = function() {
+
+}
+
+/**
+ * 
  * @param {*} gameContext 
  * @param {*} request 
  * @returns {void} 
@@ -30,6 +38,7 @@ Action.prototype.onUpdate = function(gameContext, request) {
  * 
  * @param {*} gameContext 
  * @param {*} request 
+ * @param {string} messengerID
  * @returns {boolean} 
  */
-Action.prototype.validate = function(gameContext, request) {}
+Action.prototype.validate = function(gameContext, request, messengerID) {}

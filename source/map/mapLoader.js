@@ -60,7 +60,7 @@ MapLoader.prototype.loadMapData = function(mapID) {
 
     if(!mapType) {
         response(false, "MapType does not exist!", "loadMapData", null, {mapID});
-        return null;
+        return Promise.resolve(null);
     }
 
     const mapPath = ResourceLoader.getPath(mapType.directory, mapType.source);
@@ -73,12 +73,16 @@ MapLoader.prototype.loadMap = function(mapID) {
 
     if(cachedMap) {
         this.loadedMaps.set(mapID, cachedMap);
-        return response(true, "Map was in cache!", "loadMap", null, {mapID});
+        response(true, "Map was in cache!", "loadMap", null, {mapID});
+
+        return Promise.resolve(cachedMap);
     }
 
     return this.loadMapData(mapID).then(mapData => {
         if(!mapData) {
-            return response(false, "MapData could not be loaded!", "loadMap", null, {mapID});
+            response(false, "MapData could not be loaded!", "loadMap", null, {mapID});
+
+            return null;
         }
 
         const map2D = new Map2D(mapID, mapData);
@@ -86,7 +90,9 @@ MapLoader.prototype.loadMap = function(mapID) {
         this.loadedMaps.set(mapID, map2D);
         this.cachedMaps.set(mapID, map2D);
 
-        return response(true, "Map has been loaded!", "loadMap", null, {mapID});
+        response(true, "Map has been loaded!", "loadMap", null, {mapID});
+
+        return map2D;
     });
 }
 

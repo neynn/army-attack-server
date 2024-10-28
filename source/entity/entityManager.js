@@ -208,8 +208,6 @@ EntityManager.prototype.loadEntityTypes = function(entityTypes) {
 
 EntityManager.prototype.getEntity = function(entityID) {
     if(!this.entities.has(entityID)) {
-        //response
-        console.warn(`Entity ${entityID} does not exist! Returning null...`);
         return null;
     }
 
