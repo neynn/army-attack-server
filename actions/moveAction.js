@@ -1,7 +1,7 @@
 import { Action } from "../source/action/action.js";
 import { MoveSystem } from "../systems/move.js";
 import { PathfinderSystem } from "../systems/pathfinder.js";
-import { ACTION_TYPES, ENTITY_EVENTS } from "../enums.js";
+import { ACTION_TYPES } from "../enums.js";
 import { PlaceSystem } from "../systems/place.js";
 import { TeamSystem } from "../systems/team.js";
 
@@ -29,8 +29,6 @@ MoveAction.prototype.onEnd = function(gameContext, request) {
 
     MoveSystem.endMove(gameContext, entity, targetX, targetY);
     PlaceSystem.placeEntity(gameContext, entity);
-
-    entity.events.emit(ENTITY_EVENTS.POSITION_UPDATE);
 }
 
 MoveAction.prototype.validate = function(gameContext, request, messengerID) {

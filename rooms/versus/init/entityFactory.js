@@ -9,8 +9,8 @@ const createUnit = function(gameContext, entity, entitySetup, typeConfig) {
     const attackComponent = componentSetup.setupAttackComponent(typeConfig, typeConfig.stats[MODE_STAT_TYPE_ID]);
     const moveComponent = componentSetup.setupMoveComponent(typeConfig, typeConfig.stats[MODE_STAT_TYPE_ID]);
 
-    entity.states.addState(ENTITY_STATES.IDLE, new UnitIdleState());
-    entity.states.addState(ENTITY_STATES.DOWN, new UnitDownState());
+    //entity.states.addState(ENTITY_STATES.IDLE, new UnitIdleState());
+    //entity.states.addState(ENTITY_STATES.DOWN, new UnitDownState());
 
     entity.addComponent(attackComponent);
     entity.addComponent(moveComponent);
@@ -56,19 +56,19 @@ export const entityFactory = {
     "Town": createTown
 };
 
-entityFactory.isBuildable = function(archetype) {
-    if(entityFactory[archetype]) {
-        return true;
-    } 
-
-    return false;
-}
-
-entityFactory.buildEntity = function(gameContext, entity, type, setup) {
+entityFactory.buildEntity = function(gameContext, type, setup) {
     const { entityManager } = gameContext;
+    const { stats, archetype } = type;
+    const builder = entityFactory[archetype];
+
+    if(!builder) {
+        return null;
+    }
+
+    const entity = entityManager.createEntity(setup.type);
     const positionComponent = componentSetup.setupPositionComponent(setup);
     const sizeComponent = componentSetup.setupSizeComponent(type);
-    const healthComponent = componentSetup.setupHealthComponent(type, type.stats[MODE_STAT_TYPE_ID]);
+    const healthComponent = componentSetup.setupHealthComponent(type, stats[MODE_STAT_TYPE_ID]);
     const teamComponent = componentSetup.setupTeamComponent(setup);
 
     entity.addComponent(positionComponent);
@@ -76,12 +76,11 @@ entityFactory.buildEntity = function(gameContext, entity, type, setup) {
     entity.addComponent(healthComponent);
     entity.addComponent(teamComponent);
 
-    entityFactory[type.archetype](gameContext, entity, setup, type);
-
+    builder(gameContext, entity, setup, type);
+    entityManager.loadTraits(entity, stats[MODE_STAT_TYPE_ID].traits);
     entityManager.loadComponents(entity, setup.components);
-    entityManager.loadTraits(entity, type.stats[MODE_STAT_TYPE_ID].traits);
 
-    entity.states.setNextState(ENTITY_STATES.IDLE);
+    //entity.states.setNextState(ENTITY_STATES.IDLE);
 
-    console.log(entity.components);
+    return entity;
 }

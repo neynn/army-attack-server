@@ -20,6 +20,10 @@ import { componentSetup } from "./init/components.js";
 
 export const VersusRoom = function() {
     GameContext.call(this);
+
+    this.teamDecider = 0;
+    this.mapID = null;
+    this.entityBatch = [];
 }
 
 VersusRoom.prototype = Object.create(GameContext.prototype);
@@ -77,108 +81,6 @@ VersusRoom.prototype.initializeContext = function() {
         "Health": HealthComponent,
         "Construction": ConstructionComponent
     });
-}
-
-VersusRoom.prototype.processMessage = async function(messengerID, message) {
-    const { type, payload } = message;
-
-    switch(type) {
-        case ROOM_EVENTS.START_INSTANCE: return this.handleStartInstance(messengerID, message);
-        case GAME_EVENTS.ENTITY_ACTION: return this.handleEntityAction(messengerID, message);
-        default: return null;
-    }
-}
-
-VersusRoom.prototype.handleEntityAction = function(messengerID, message) {
-    const { type, payload } = message;
-
-    if(typeof payload !== "object") {
-        return null;
-    }
-
-    const isValid = this.actionQueue.processRequest(messengerID, payload, this);
-
-    if(isValid) {
-        this.actionQueue.queueAction(payload);
-        this.actionQueue.update(this);
-    }
-}
-
-VersusRoom.prototype.handleStartInstance = async function(messengerID, message) {
-    const { type, payload } = message;
-    const { mapID } = payload;
-
-    if(!this.isFull() || this.isStarted || !this.isLeader(messengerID)) {
-        return null;
-    }
-    
-    this.start();
-
-    this.sendMessage({
-        "type": ROOM_EVENTS.START_INSTANCE,
-        "payload": {
-            
-        }
-    });
-
-    let decider = 0;
-
-    for(const [memberID, member] of this.clients) {
-        const teamID = decider % 2 === 0 ? "1" : "0";
-        const controller = this.initializeController({
-            "team": teamID,
-            "master": memberID
-        });
-
-        this.controllers.set(memberID, controller);
-
-        this.sendMessage({
-            "type": GAME_EVENTS.INSTANCE_CONTROLLER,
-            "payload": {
-                "team": teamID,
-                "master": memberID
-            }
-        }, memberID);
-
-        decider ++;
-    }
-
-    const mapData = await this.mapLoader.loadMapData(mapID);
-
-    if(!mapData) {
-        return null;
-    }
-
-    this.sendMessage({
-        "type": GAME_EVENTS.INSTANCE_MAP,
-        "payload": {
-            "id": mapID,
-            "data": mapData
-        }
-    });
-
-    this.mapLoader.createMapFromData(mapID, mapData);
-    this.initializeMap(mapID);
-    this.initializeTilemap(mapID);
-    
-    //TEST - only the first client gets control of the entities
-    const clients = Array.from(this.clients.keys());
-    const setups = [
-        { "type": "blue_battletank", "tileX": 0, "tileY": 0, "team": "1", "master": clients[0] },
-        { "type": "red_battletank", "tileX": 2, "tileY": 0, "team": "0", "master": clients[1] }
-    ];
-
-    for(const setup of setups) {
-        const entity = this.initializeEntity(setup);
-
-        this.sendMessage({
-            "type": GAME_EVENTS.INSTANCE_ENTITY,
-            "payload": {
-                "id": entity.id,
-                "setup": setup
-            }
-        });
-    }
 }
 
 VersusRoom.prototype.initializeTilemap = function(mapID) {
@@ -251,16 +153,13 @@ VersusRoom.prototype.initializeEntity = function(setup) {
         return null;
     }
 
-    const { archetype } = typeConfig;
+    const entity = entityFactory.buildEntity(this, typeConfig, setup);
 
-    if(!entityFactory.isBuildable(archetype)) {
-        console.warn(`Archetype ${archetype} does not exist! Returning null...`);
+    if(!entity) {
+        console.warn(`Entity creation failed! Returning null...`);
         return null;
     }
 
-    const entity = this.entityManager.createEntity(type);
-
-    entityFactory.buildEntity(this, entity, typeConfig, setup);
     PlaceSystem.placeEntity(this, entity);
 
     this.entityManager.enableEntity(entity.id); 
@@ -273,6 +172,7 @@ VersusRoom.prototype.initializeController = function(setup) {
     const teamComponent = componentSetup.setupTeamComponent(setup);
 
     controller.addComponent(teamComponent);
+    controller.isMapLoaded = false;
 
     return controller;
 }
@@ -295,5 +195,155 @@ VersusRoom.prototype.saveEntity = function(entityID) {
         "team": teamComponent.teamID,
         "master": teamComponent.masterID,
         "components": savedComponents
+    }
+}
+
+VersusRoom.prototype.processMessage = async function(messengerID, message) {
+    const { type, payload } = message;
+
+    switch(type) {
+        case ROOM_EVENTS.START_INSTANCE: {
+            if(!this.isFull() || this.isStarted || !this.isLeader(messengerID)) {
+                return;
+            }
+
+            this.start();
+            this.handleStartInstance(messengerID, message);
+            break;
+        }
+        case GAME_EVENTS.ENTITY_ACTION: {
+            this.handleEntityAction(messengerID, message);
+            break;
+        }
+        case GAME_EVENTS.INSTANCE_MAP: {
+            this.handleMapInstanceAttempt(messengerID, message);
+            break;
+        }
+        default: {
+            console.error("Message type is unknown!", type);
+        }
+    }
+}
+
+VersusRoom.prototype.handleStartInstance = async function(messengerID, message) {
+    const { type, payload } = message;
+    const { mapID } = payload;
+
+    this.sendMessage({
+        "type": ROOM_EVENTS.START_INSTANCE,
+        "payload": {}
+    });
+
+    for(const [memberID, member] of this.clients) {
+        const teamID = this.teamDecider % 2 === 0 ? "1" : "0";
+        const controller = this.initializeController({
+            "team": teamID,
+            "master": memberID
+        });
+
+        this.controllers.set(memberID, controller);
+
+        this.sendMessage({
+            "type": GAME_EVENTS.INSTANCE_CONTROLLER,
+            "payload": {
+                "team": teamID,
+                "master": memberID
+            }
+        }, memberID);
+
+        this.teamDecider ++;
+    }
+
+    const mapData = await this.mapLoader.loadMapData(mapID);
+
+    if(!mapData) {
+        return null;
+    }
+
+    const clients = Array.from(this.clients.keys());
+    const setups = [
+        { "id": null, "type": "blue_battletank", "tileX": 0, "tileY": 0, "team": "1", "master": clients[0] },
+        { "id": null, "type": "red_battletank", "tileX": 2, "tileY": 0, "team": "0", "master": clients[1] }
+    ];
+
+    this.mapID = mapID;
+    this.entityBatch = setups;
+    this.mapLoader.createMapFromData(mapID, mapData);
+    this.initializeMap(mapID);
+    this.initializeTilemap(mapID);
+
+    for(const setup of setups) {
+        const entity = this.initializeEntity(setup);
+        setup.id = entity.id;
+    }
+
+    this.sendMessage({
+        "type": GAME_EVENTS.INSTANCE_MAP,
+        "payload": {
+            "id": mapID
+        }
+    });
+}
+
+VersusRoom.prototype.handleMapInstanceAttempt = function(messengerID, message) {
+    const { payload } = message;
+    const { success, error } = payload;
+
+    if(!success) {
+        console.error(error);
+        console.error("RESENDING FULL MAP DATA");
+
+        this.mapLoader.loadMapData(this.mapID).then(mapData => {
+            this.sendMessage({
+                "type": GAME_EVENTS.INSTANCE_MAP_FROM_DATA,
+                "payload": {
+                    "id": this.mapID,
+                    "data": mapData
+                }
+            }, messengerID);
+        });
+
+        return false;
+    }
+
+    const nextController = this.controllers.get(messengerID);
+
+    if(!nextController) {
+        return false;
+    }
+
+    this.sendMessage({
+        "type": GAME_EVENTS.INSTANCE_ENTITY_BATCH,
+        "payload": {
+            "batch": this.entityBatch
+        }
+    }, messengerID);
+
+    nextController.isMapLoaded = true;
+
+    for(const [controllerID, controller] of this.controllers) {
+        if(!controller.isMapLoaded) {
+            return false;
+        }
+    }
+
+    delete this.teamDecider;
+    delete this.mapID;
+    delete this.entityBatch;
+    //start the game properly with the turn manager, ect.
+}
+
+VersusRoom.prototype.handleEntityAction = function(messengerID, message) {
+    const { type, payload } = message;
+
+    if(typeof payload !== "object") {
+        return null;
+    }
+
+    const isValid = this.actionQueue.processRequest(messengerID, payload, this);
+
+    if(isValid) {
+        this.actionQueue.queueAction(payload);
+        this.actionQueue.update(this);
     }
 }
