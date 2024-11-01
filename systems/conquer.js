@@ -1,6 +1,4 @@
-export const ConquerSystem = function() {
-    this.id = "ConquerSystem";
-}
+export const ConquerSystem = function() {}
 
 //before conversion, check if the tile is neutral
 //this has nothing to do with the conversion, so keep it out of here
