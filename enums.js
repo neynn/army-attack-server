@@ -17,15 +17,6 @@ export const ACTION_TYPES = Object.freeze({
     "MOVE": "MOVE"
 });
 
-export const ENTITY_STATES = Object.freeze({
-    "IDLE": "IDLE",
-    "FIRE": "FIRE",
-    "HIT": "HIT",
-    "MOVE": "MOVE",
-    "DOWN": "DOWN",
-    "CONSTRUCTION": "CONSTRUCTION"
-});
-
 export const ENTITY_EVENTS = Object.freeze({
     "POSITION_UPDATE": Symbol("POSITION_UPDATE"),
     "DIRECTION_UPDATE": Symbol("DIRECTION_UPDATE"),

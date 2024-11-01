@@ -1,6 +1,3 @@
-import { ENTITY_STATES } from "../../../enums.js";
-import { UnitDownState } from "../../../states/unit/unitDown.js";
-import { UnitIdleState } from "../../../states/unit/unitIdle.js";
 import { componentSetup } from "./components.js";
 
 const MODE_STAT_TYPE_ID = "story";
@@ -8,9 +5,6 @@ const MODE_STAT_TYPE_ID = "story";
 const createUnit = function(gameContext, entity, entitySetup, typeConfig) {
     const attackComponent = componentSetup.setupAttackComponent(typeConfig, typeConfig.stats[MODE_STAT_TYPE_ID]);
     const moveComponent = componentSetup.setupMoveComponent(typeConfig, typeConfig.stats[MODE_STAT_TYPE_ID]);
-
-    //entity.states.addState(ENTITY_STATES.IDLE, new UnitIdleState());
-    //entity.states.addState(ENTITY_STATES.DOWN, new UnitDownState());
 
     entity.addComponent(attackComponent);
     entity.addComponent(moveComponent);
@@ -79,8 +73,6 @@ entityFactory.buildEntity = function(gameContext, type, setup) {
     builder(gameContext, entity, setup, type);
     entityManager.loadTraits(entity, stats[MODE_STAT_TYPE_ID].traits);
     entityManager.loadComponents(entity, setup.components);
-
-    //entity.states.setNextState(ENTITY_STATES.IDLE);
 
     return entity;
 }
