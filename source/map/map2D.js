@@ -1,11 +1,10 @@
 import { clampValue } from "../math/math.js";
 
-export const Map2D = function(id, config) {
+export const Map2D = function(id) {
     this.id = id;
     this.music = null;
     this.width = 0;
     this.height = 0;
-    this.layerOpacity = {};
     this.layers = {};
     this.backgroundLayers = [];
     this.foregroundLayers = [];
@@ -13,56 +12,36 @@ export const Map2D = function(id, config) {
     this.tiles = [];
     this.entities = [];
     this.flags = {};
-
-    this.initialize(config);
 }
 
-Map2D.prototype.initialize = function(config) {
-    const { music, width, height, layerOpacity, layers, tiles, entities, flags, backgroundLayers, foregroundLayers, metaLayers } = config;
+Map2D.prototype.getAutoGeneratingLayers = function() {
+    const layerIDs = new Set();
 
-    if(music) {
-        this.music = music;
-    }
+    for(const layerConfig of this.backgroundLayers) {
+        const { id, autoGenerate } = layerConfig;
 
-    if(width) {
-        this.width = width;
-    }
-
-    if(height) {
-        this.height = height;
+        if(autoGenerate) {
+            layerIDs.add(id);
+        }
     }
 
-    if(layerOpacity) {
-        this.layerOpacity = layerOpacity;
+    for(const layerConfig of this.foregroundLayers) {
+        const { id, autoGenerate } = layerConfig;
+
+        if(autoGenerate) {
+            layerIDs.add(id);
+        }
     }
 
-    if(layers) {
-        this.layers = layers;
-    }
-    
-    if(tiles) {
-        this.tiles = tiles;
+    for(const layerConfig of this.metaLayers) {
+        const { id, autoGenerate } = layerConfig;
+
+        if(autoGenerate) {
+            layerIDs.add(id);
+        }
     }
 
-    if(entities) {
-        this.entities = entities;
-    }
-
-    if(flags) {
-        this.flags = flags;
-    }
-
-    if(backgroundLayers) {
-        this.backgroundLayers = backgroundLayers;
-    }
-
-    if(foregroundLayers) {
-        this.foregroundLayers = foregroundLayers;
-    }
-
-    if(metaLayers) {
-        this.metaLayers = metaLayers;
-    }
+    return layerIDs;
 }
 
 Map2D.prototype.setLayerOpacity = function(layerID, opacity) {
@@ -72,9 +51,37 @@ Map2D.prototype.setLayerOpacity = function(layerID, opacity) {
 
     opacity = clampValue(opacity, 1, 0);
 
-    this.layerOpacity[layerID] = opacity;
+    for(const layerConfig of this.backgroundLayers) {
+        const { id } = layerConfig;
 
-    return true;
+        if(id === layerID) {
+            layerConfig.opacity = opacity;
+
+            return true;
+        }
+    }
+
+    for(const layerConfig of this.foregroundLayers) {
+        const { id } = layerConfig;
+
+        if(id === layerID) {
+            layerConfig.opacity = opacity;
+
+            return true;
+        }
+    }
+
+    for(const layerConfig of this.metaLayers) {
+        const { id } = layerConfig;
+
+        if(id === layerID) {
+            layerConfig.opacity = opacity;
+
+            return true;
+        }
+    }
+
+    return false;
 } 
 
 Map2D.prototype.getSurroundingTiles = function(directions) {
@@ -107,22 +114,6 @@ Map2D.prototype.getID = function() {
     return this.id;
 }
 
-Map2D.prototype.generateEmptyLayer = function(layerID, fillID) {
-    const layer = new Array(this.height * this.width);
-
-    for(let i = 0; i < this.height; i++) {
-        const row = i * this.width;
-
-        for(let j = 0; j < this.width; j++) {
-            const index = row + j;
-
-            layer[index] = fillID;
-        }
-    }
-
-    this.layers[layerID] = layer;
-}
-
 Map2D.prototype.resizeLayer = function(layerID, width, height, fill) {
     const oldLayer = this.layers[layerID];
 
@@ -131,7 +122,8 @@ Map2D.prototype.resizeLayer = function(layerID, width, height, fill) {
     }
 
     const layerSize = width * height;
-    const newLayer = new Array(layerSize);
+    const ArrayType = oldLayer.constructor;
+    const newLayer = new ArrayType(layerSize);
     
     for(let i = 0; i < layerSize; i++) {
         newLayer[i] = fill;
@@ -158,6 +150,26 @@ Map2D.prototype.resizeLayer = function(layerID, width, height, fill) {
     }
 
     this.layers[layerID] = newLayer;
+}
+
+Map2D.prototype.clearTile = function(layerID, tileX, tileY) {
+    const layer = this.layers[layerID];
+
+    if(!layer) {
+        console.warn(`Layer ${layerID} does not exist! Returning...`);
+        return false;
+    }
+
+    if(this.isTileOutOfBounds(tileX, tileY)) {
+        console.warn(`Tile ${tileY},${tileX} does not exist! Returning...`);
+        return false;
+    }
+    
+    const index = tileY * this.width + tileX;
+
+    layer[index] = 0;
+
+    return true;
 }
 
 Map2D.prototype.placeTile = function(data, layerID, tileX, tileY) {
@@ -219,6 +231,10 @@ Map2D.prototype.getTileEntity = function(tileX, tileY) {
 
     const index = tileY * this.width + tileX;
     const tile = this.tiles[index];
+    
+    if(!tile) {
+        return null;
+    }
     
     return tile.getFirstEntity();
 }

@@ -1,46 +1,41 @@
 {
     "mapLoader": {
-        "mapCacheEnabled": false,
-        "maxMapWidth": 100,
-        "maxMapHeight": 100,
+        "mapCacheEnabled": true,
+        "maxMapWidth": 255,
+        "maxMapHeight": 255,
         "mapSetup": {
+            "music": "music_remastered",
             "width": 20,
             "height": 20,
             "layers": {
-                "ground": { "id": "ground", "fill": ["ground", "Bg_GoodTile_01_desert"] },
-                "border": { "id": "border", "fill": null },
-                "decoration": { "id": "decoration", "fill": null },
-                "overlay": { "id": "overlay", "fill": null },
-                "cloud": { "id": "cloud", "fill": null },
-                "type": { "id": "type", "fill": "0" },
-                "team": { "id": "team", "fill": "0" }
-            },
-            "layerOpacity": {
-                "ground": 1,
-                "border": 1,
-                "decoration": 1,
-                "overlay": 1,
-                "cloud": 1,
-                "type": 1,
-                "team": 1
+                "ground": { "id": "ground", "fill": 1 },
+                "border": { "id": "border", "fill": 0 },
+                "decoration": { "id": "decoration", "fill": 0 },
+                "overlay": { "id": "overlay", "fill": 0 },
+                "cloud": { "id": "cloud", "fill": 0 },
+                "type": { "id": "type", "fill": 0 },
+                "team": { "id": "team", "fill": 0 }
             },
             "backgroundLayers": [
-                "ground",
-                "border",
-                "decoration",
-                "overlay"
+                { "id": "ground", "opacity": 1, "autoGenerate": false },
+                { "id": "border", "opacity": 1, "autoGenerate": true },
+                { "id": "decoration", "opacity": 1, "autoGenerate": false },
+                { "id": "overlay", "opacity": 1, "autoGenerate": true }
             ],
             "foregroundLayers": [
-                "cloud"
+                { "id":"cloud", "opacity": 1, "autoGenerate": false }
             ],
             "metaLayers": [
-                "type",
-                "team"
+                { "id": "type", "opacity": 1, "autoGenerate": false }, 
+                { "id": "team", "opacity": 1, "autoGenerate": false } 
             ]
         }
     },
     "mapEditor": {
         "id": "MAP_EDITOR",
+        "overlayOpacity": 0.75,
+        "brushSizes": [0, 1, 2, 3, 4],
+        "brushModes": ["DRAW", "ERASE"],
         "interface": {
             "id": "MAP_EDITOR",
             "layerButtonStates": {
@@ -56,7 +51,7 @@
             "layerButtons": {
                 "L1": { "id": "L1", "layer": "ground", "text": "TEXT_L1", "state": "1", "type": "1" },
                 "L2": { "id": "L2", "layer": "decoration", "text": "TEXT_L2", "state": "1", "type": "1" },
-                "L3": { "id": "L3", "layer": "neutral", "text": "TEXT_L3", "state": "1", "type": "0" },
+                "L3": { "id": "L3", "layer": "cloud", "text": "TEXT_L3", "state": "1", "type": "1" },
                 "LC": { "id": "LC", "layer": "type", "text": "TEXT_LC", "state": "1", "type": "2" }
             },
             "slotButtons": {
@@ -73,21 +68,17 @@
             "slots": ["BUTTON_0", "BUTTON_1", "BUTTON_2", "BUTTON_3", "BUTTON_4", "BUTTON_5", "BUTTON_6", "BUTTON_7", "BUTTON_8"]
         },
         "hiddenSets": {
-            "border": 1,
             "range": 1,
-            "overlay": 1
-        },
-        "orderedSets": {
-            "ground": {
-                "order": 0,
-                "tiles": []
-            },
-            "deco_bad": [],
-            "deco_good": [],
-            "mountain": [],
-            "river_good": [],
-            "river_bad": [],
-            "coast": []
+            "overlay": 1,
+            "border": 1
         }
+    },
+    "socket": {
+        "server": "http://localhost:3000",
+        "version": "https://cdn.socket.io/4.7.5/socket.io.min.js",
+        "userID": "neyn",
+        "reconnectionAttempts": 5,
+        "reconnectionDelay": 1000,
+        "timeout": 10000
     }
 }
