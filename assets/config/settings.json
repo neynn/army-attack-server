@@ -1,6 +1,7 @@
 {
     "mapLoader": {
-        "mapCacheEnabled": true,
+        "loadGraphics": false,
+        "mapCacheEnabled": false,
         "maxMapWidth": 255,
         "maxMapHeight": 255,
         "mapSetup": {
